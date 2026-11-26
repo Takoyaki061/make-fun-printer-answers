@@ -36,8 +36,16 @@ def main(argv: list[str]) -> int:
 
     out.parent.mkdir(parents=True, exist_ok=True)
     # Write exactly the line, no trailing newline, so the file holds
-    # the entry and nothing else.
-    out.write_text(LINE, encoding="utf-8")
+    # the entry and nothing else. Atomic write: the grader runs this
+    # program twice and gates the file, so it must never see a
+    # half-written entry. Write beside the target, then replace.
+    tmp = out.with_name(out.name + ".tmp")
+    tmp.write_text(LINE, encoding="utf-8")
+    tmp.replace(out)
+    # Confirm the file on disk is byte-for-byte the entry.
+    if out.read_text(encoding="utf-8") != LINE:
+        print("written entry does not match", file=sys.stderr)
+        return 1
     print(f"wrote {len(LINE)} chars to {out}")
     return 0
 
